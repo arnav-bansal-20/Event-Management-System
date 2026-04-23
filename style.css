@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event Horizon | System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="static/style.css" />
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+</head>
+
+<body>
+  <div class="background-glob"></div>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <h1>Event<span class="highlight">Horizon</span></h1>
+        <p>Advanced Priority Scheduling System</p>
+      </div>
+      <div class="status-indicator">
+        <span class="dot online"></span> System Online
+      </div>
+    </header>
+
+    <main>
+
+      <section class="top-grid">
+
+        <div class="card priority-card" id="priority-card">
+          <div class="card-header">
+            <h2><i class="fas fa-bolt"></i> Next Up</h2>
+            <span class="badge" id="next-priority-badge">Priority 1</span>
+          </div>
+          <div class="card-body" id="next-event-content">
+            <div class="loading-spinner"></div>
+            <p>Fetching highest priority event...</p>
+          </div>
+        </div>
+
+
+        <div class="card form-card">
+          <h2>Create Event</h2>
+          <form id="add-event-form">
+            <div class="form-row">
+              <input type="text" id="event-name" required placeholder="Event Name" />
+            </div>
+            <div class="form-row">
+              <input type="number" id="event-priority" required placeholder="Priority (1-100)" min="1" max="100" />
+              <input type="date" id="event-date" required
+                style="flex: 1; padding: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;" />
+
+            </div>
+            <div class="form-group">
+              <input type="text" id="event-desc" placeholder="Description" />
+            </div>
+            <button type="submit" class="btn btn-primary">Add Event</button>
+          </form>
+        </div>
+      </section>
+
+
+      <section class="events-section">
+        <div class="section-header">
+          <h2>All Events</h2>
+          <div class="controls" style="display: flex; gap: 10px; align-items: center;">
+            <input type="text" id="search-name" placeholder="Search Name"
+              style="width: 150px; padding: 0.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: white;">
+            <button class="btn btn-sm btn-secondary" onclick="searchEventByName()"><i
+                class="fas fa-search"></i></button>
+            <button class="btn btn-sm" onclick="fetchEvents()">
+              <i class="fas fa-sync"></i> Refresh
+            </button>
+          </div>
+        </div>
+        <div class="events-grid" id="events-grid">
+
+        </div>
+      </section>
+    </main>
+  </div>
+
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h2>Add Participant</h2>
+      <h3 id="modal-event-name" class="highlight-text"></h3>
+      <form id="add-participant-form">
+        <input type="hidden" id="modal-event-name-input" />
+        <div class="form-group">
+          <input type="text" id="participant-name" required placeholder="Participant Name" />
+        </div>
+        <button type="submit" class="btn btn-secondary">Add</button>
+      </form>
+      <div class="participants-list" id="modal-participants-list">
+
+      </div>
+    </div>
+  </div>
+
+  <script src="static/script.js"></script>
+</body>
+
+</html>

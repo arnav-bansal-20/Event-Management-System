@@ -1,0 +1,303 @@
+#include "structures.h"
+EXPORT void initSystem(System *sys) {
+  sys->heapSize = 0;
+  for (int i = 0; i < TABLE_SIZE; i++) {
+    sys->eventHashTable[i] = NULL;
+  }
+}
+EXPORT void clearSystem(System *sys) {
+  for (int i = 0; i < TABLE_SIZE; i++) {
+    Event *current = sys->eventHashTable[i];
+    while (current != NULL) {
+      Event *temp = current;
+      current = current->nextHash;
+      
+      Participant *p = temp->participants;
+      while (p) {
+        Participant *nextP = p->next;
+        free(p);
+        p = nextP;
+      }
+      free(temp);
+    }
+    sys->eventHashTable[i] = NULL;
+  }
+  sys->heapSize = 0;
+}
+unsigned int hash(char *name) {
+  unsigned int hashValue = 0;
+  for (int i = 0; name[i] != '\0'; i++) {
+    hashValue = (hashValue * 31 + name[i]) % TABLE_SIZE;
+  }
+  return hashValue;
+}
+void swap(Event **a, Event **b) {
+  Event *temp = *a;
+  *a = *b;
+  *b = temp;
+}
+void heapifyUp(System *sys, int index) {
+  if (index == 0)
+    return;
+  int parentIndex = (index - 1) / 2;
+  if (sys->eventHeap[index]->priority < sys->eventHeap[parentIndex]->priority) {
+    swap(&sys->eventHeap[index], &sys->eventHeap[parentIndex]);
+    heapifyUp(sys, parentIndex);
+  }
+}
+void heapifyDown(System *sys, int index) {
+  int smallest = index;
+  int left = 2 * index + 1;
+  int right = 2 * index + 2;
+  if (left < sys->heapSize && sys->eventHeap[left]->priority < sys->eventHeap[smallest]->priority)
+    smallest = left;
+  if (right < sys->heapSize && sys->eventHeap[right]->priority < sys->eventHeap[smallest]->priority)
+    smallest = right;
+  if (smallest != index) {
+    swap(&sys->eventHeap[index], &sys->eventHeap[smallest]);
+    heapifyDown(sys, smallest);
+  }
+}
+EXPORT int addEvent(System *sys, int id, char *name, int priority, char *desc, char *date) {
+  if (searchEvent(sys, name) != NULL) {
+    printf("Event '%s' already exists. Cannot add duplicate.\n", name);
+    return 0;
+  }
+
+  Event *newEvent = (Event *)malloc(sizeof(Event));
+  newEvent->id = id;
+  strcpy(newEvent->name, name);
+  newEvent->priority = priority;
+  strcpy(newEvent->description, desc);
+  strcpy(newEvent->date, date);
+  newEvent->participants = NULL;
+  newEvent->nextHash = NULL;
+  unsigned int index = hash(name);
+  newEvent->nextHash = sys->eventHashTable[index];
+  sys->eventHashTable[index] = newEvent;
+  if (sys->heapSize < HEAP_SIZE) {
+    sys->eventHeap[sys->heapSize] = newEvent;
+    heapifyUp(sys, sys->heapSize);
+    sys->heapSize++;
+  } else {
+    printf("Heap is full, cannot prioritize this event.\n");
+  }
+  printf("Event '%s' added successfully with Priority %d on %s.\n", name, priority, date);
+  return 1;
+}
+EXPORT Event *searchEvent(System *sys, char *name) {
+  unsigned int index = hash(name);
+  Event *current = sys->eventHashTable[index];
+  while (current != NULL) {
+    if (strcmp(current->name, name) == 0) {
+      return current;
+    }
+    current = current->nextHash;
+  }
+  return NULL;
+}
+EXPORT int deleteEventByName(System *sys, char *name) {
+  Event *target = NULL;
+  Event *prev = NULL;
+  int foundIndex = -1;
+  unsigned int index = hash(name);
+  
+
+  Event *current = sys->eventHashTable[index];
+  Event *p = NULL;
+  while (current != NULL) {
+    if (strcmp(current->name, name) == 0) {
+      target = current;
+      prev = p;
+      foundIndex = index;
+      break; 
+    }
+    p = current;
+    current = current->nextHash;
+  }
+
+  if (target == NULL) {
+    printf("Event '%s' not found.\n", name);
+    return 0; 
+  }
+  
+
+  if (prev == NULL) {
+    sys->eventHashTable[foundIndex] = target->nextHash;
+  } else {
+    prev->nextHash = target->nextHash;
+  }
+
+
+  int heapIndex = -1;
+  for (int i = 0; i < sys->heapSize; i++) {
+    if (sys->eventHeap[i] == target) {
+      heapIndex = i;
+      break;
+    }
+  }
+  if (heapIndex != -1) {
+    sys->eventHeap[heapIndex] = sys->eventHeap[sys->heapSize - 1];
+    sys->heapSize--;
+    heapifyDown(sys, heapIndex);
+  }
+
+
+  Participant *part = target->participants;
+  while (part) {
+    Participant *nextP = part->next;
+    free(part);
+    part = nextP;
+  }
+
+  printf("Event '%s' deleted.\n", target->name);
+  free(target);
+  return 1; 
+}
+
+EXPORT int getNextId(System *sys) {
+  int maxId = 0;
+  for (int i = 0; i < TABLE_SIZE; i++) {
+    Event *current = sys->eventHashTable[i];
+    while (current != NULL) {
+      if (current->id > maxId) {
+        maxId = current->id;
+      }
+      current = current->nextHash;
+    }
+  }
+  return maxId + 1;
+}
+
+EXPORT Event *getNextEvent(System *sys) {
+  if (sys->heapSize == 0)
+    return NULL;
+  return sys->eventHeap[0];
+}
+EXPORT void getNextHighPriorityEvents(System *sys, Event **buffer, int *count) {
+    *count = 0;
+    if (sys->heapSize == 0) return;
+    int maxPriority = sys->eventHeap[0]->priority;
+    for (int i = 0; i < sys->heapSize; i++) {
+        if (sys->eventHeap[i]->priority == maxPriority) {
+            buffer[*count] = sys->eventHeap[i];
+            (*count)++;
+        }
+    }
+}
+EXPORT void addParticipant(System *sys, char *eventName, int pID, char *pName) {
+  Event *event = searchEvent(sys, eventName);
+  if (event == NULL) {
+    printf("Event '%s' not found.\n", eventName);
+    return;
+  }
+  Participant *newP = (Participant *)malloc(sizeof(Participant));
+  newP->id = pID;
+  strcpy(newP->name, pName);
+  newP->next = event->participants;
+  event->participants = newP;
+  printf("Participant '%s' added to event '%s'.\n", pName, eventName);
+}
+EXPORT void listParticipants(Event *e) {
+  if (e == NULL)
+    return;
+  printf("Participants for %s:\n", e->name);
+  Participant *current = e->participants;
+  if (current == NULL) {
+    printf("  No participants yet.\n");
+    return;
+  }
+  while (current != NULL) {
+    printf("  - ID: %d, Name: %s\n", current->id, current->name);
+    current = current->next;
+  }
+}
+EXPORT void printEvent(Event *e) {
+  if (e == NULL)
+    return;
+  printf("Event ID: %d\n", e->id);
+  printf("Name: %s\n", e->name);
+  printf("Priority: %d\n", e->priority);
+  printf("Description: %s\n", e->description);
+  printf("Date: %s\n", e->date);
+  listParticipants(e);
+  printf("---------------------------\n");
+}
+EXPORT void displayAllEvents(System *sys) {
+  printf("\n--- ALL EVENTS ---\n");
+  int count = 0;
+  for (int i = 0; i < TABLE_SIZE; i++) {
+    Event *current = sys->eventHashTable[i];
+    while (current != NULL) {
+      printEvent(current);
+      count++;
+      current = current->nextHash;
+    }
+  }
+  if (count == 0) {
+    printf("No events found in the system.\n");
+  }
+}
+EXPORT void saveSystemToFile(System *sys, const char *filename) {
+  FILE *fp = fopen(filename, "w");
+  if (!fp) {
+    printf("Error opening file for writing.\n");
+    return;
+  }
+  for (int i = 0; i < TABLE_SIZE; i++) {
+    Event *curr = sys->eventHashTable[i];
+    while (curr) {
+      fprintf(fp, "EVENT,%d,%s,%d,%s,%s\n", curr->id, curr->name, curr->priority, curr->description, curr->date);
+      Participant *p = curr->participants;
+      while (p) {
+        fprintf(fp, "PARTICIPANT,%s,%d,%s\n", curr->name, p->id, p->name);
+        p = p->next;
+      }
+      curr = curr->nextHash;
+    }
+  }
+  fclose(fp);
+  printf("System saved to %s\n", filename);
+}
+EXPORT void loadSystemFromFile(System *sys, const char *filename) {
+  FILE *fp = fopen(filename, "r");
+  char line[512];
+  
+  if (!fp) {
+    printf("File not found, starting fresh.\n");
+    return;
+  }
+  
+  while (fgets(line, sizeof(line), fp)) {
+    char type[20];
+    line[strcspn(line, "\n")] = 0; 
+    
+    sscanf(line, "%[^,]", type);
+    
+    if (strcmp(type, "EVENT") == 0) {
+      int id, priority, count;
+      char name[MAX_NAME], desc[MAX_DESC], date[20];
+      
+
+      strcpy(date, "");
+      strcpy(desc, "");
+      strcpy(name, "");
+
+
+      count = sscanf(line, "EVENT,%d,%[^,],%d,%[^,],%[^,]", &id, name, &priority, desc, date);
+
+      if (count < 5) {
+         sscanf(line, "EVENT,%d,%[^,],%d,%[^,]", &id, name, &priority, desc);
+      }
+      
+      addEvent(sys, id, name, priority, desc, date);
+    } else if (strcmp(type, "PARTICIPANT") == 0) {
+      int id;
+      char eventName[MAX_NAME], pName[MAX_NAME];
+      sscanf(line, "PARTICIPANT,%[^,],%d,%[^,]", eventName, &id, pName);
+      addParticipant(sys, eventName, id, pName);
+    }
+  }
+  fclose(fp);
+  printf("System loaded from %s\n", filename);
+}
