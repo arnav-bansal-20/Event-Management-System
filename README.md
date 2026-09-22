@@ -22,12 +22,10 @@ The system allows users to efficiently manage event details such as event name, 
 
 ## 🛠 Technologies Used
 
-- C
-- HTML5
-- CSS3
-- JavaScript
-- SQLite Database
-- REST API
+- **C**: Core data structures (Hash Table for $O(1)$ search, Min-Heap Priority Queue for event scheduling)
+- **Python (Flask)**: REST API backend and `ctypes` foreign function interface to the compiled C engine
+- **HTML5 / CSS3 / JavaScript**: Modern, responsive web user interface
+- **File Storage**: Persistent storage (`events.db`)
 
 ---
 
@@ -36,14 +34,21 @@ The system allows users to efficiently manage event details such as event name, 
 ```
 Event-Management-System/
 │
-├── app.py                # Frontend JavaScript logic
-├── index.html            # User Interface
-├── style.css             # Styling
-├── main.c                # Backend Logic
-├── functions.c           # Event management functions
-├── structures.h          # Data structures
-├── events.db             # Database
-├── requirements.txt
+├── app.py                # Flask web server & C shared library bridge (ctypes)
+├── build.sh              # Compilation script for macOS/Linux
+├── build.bat             # Compilation script for Windows
+├── main.c                # Interactive C CLI program
+├── functions.c           # Core C engine (Hash Table, Priority Queue, I/O)
+├── structures.h          # C data structure definitions
+├── events.db             # Persistent database file
+├── index.html            # Web dashboard interface
+├── style.css             # Glassmorphic UI stylesheet
+├── static/
+│   ├── index.html        # Web dashboard interface
+│   ├── script.js         # Frontend interactivity & REST API client
+│   └── style.css         # UI stylesheet
+├── requirements.txt      # Python package dependencies (Flask)
+├── .gitignore            # Git exclusion rules
 └── README.md
 ```
 
@@ -51,19 +56,44 @@ Event-Management-System/
 
 ## 🚀 Getting Started
 
-### Clone the Repository
+### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/Event-Management-System.git
+git clone https://github.com/arnav-bansal-20/Event-Management-System.git
+cd Event-Management-System
 ```
 
-### Run the Project
+### 2. Install Dependencies
 
-1. Clone the repository.
-2. Install the required dependencies.
-3. Build or run the backend.
-4. Open `index.html` or start the local server.
-5. Begin managing your events.
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Build the C Engine
+
+- **On macOS / Linux**:
+  ```bash
+  chmod +x build.sh
+  ./build.sh
+  ```
+- **On Windows**:
+  ```cmd
+  build.bat
+  ```
+
+### 4. Run the Application
+
+- **Web Application**:
+  ```bash
+  python3 app.py
+  ```
+  Open your browser and navigate to `http://127.0.0.1:5000`.
+
+- **Terminal CLI Application**:
+  ```bash
+  ./event_system        # On macOS/Linux
+  event_system.exe      # On Windows
+  ```
 
 ---
 

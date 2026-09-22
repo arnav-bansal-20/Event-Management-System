@@ -1,0 +1,33 @@
+# Compiled binaries & shared libraries
+event_system
+event_system.exe
+event_system.dll
+event_system.dylib
+event_system.so
+*.o
+*.obj
+
+# Python cache & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# Operating system files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE configuration
+.vscode/
+.idea/
+*.swp
